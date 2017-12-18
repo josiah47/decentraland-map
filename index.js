@@ -1,6 +1,6 @@
 var size = 50;
 var blocksize = 15;
-var mapoffset = 10;
+var mapoffset = 150;
 var mapoffsetrequest = '-'+mapoffset+',-'+mapoffset+'/'+mapoffset+','+mapoffset;
 var width = (mapoffset*blocksize) * 2 + blocksize;
 var height = (mapoffset*blocksize) * 2 + blocksize;
@@ -20,9 +20,14 @@ svg.call(d3.zoom()
 	.on("zoom", zoomed)
 );
 
+var div = d3.select("body").append("div")
+	.attr("class", "tooltip")
+	.style("opacity", 0);
+
 axios.get('https://api.auction.decentraland.org/api/parcelState/range/'+mapoffsetrequest)
 	.then((res) => {
 		landdata = res.data.data;
+		console.log(landdata);
 		zoomLayer.selectAll("rect")
 		.data(landdata)
 		.enter()
@@ -36,6 +41,16 @@ axios.get('https://api.auction.decentraland.org/api/parcelState/range/'+mapoffse
 		.attr("height", blocksize)
 		.attr("width", blocksize)
 		.attr("fill", function(d) {return d.projectId !== null ? '#BFBFBF' : color(d.amount/100) ;})
-		.on("click", function(d) { console.log(d);});
+		.on("click", function(d) { console.log(d);})
+		.on("mouseover", function(d) {
+			div.transition().duration(100).style("opacity", 0.8);
+			div.html(d.id + "<br/>" + (d.projectId !== null ? 'Non biddable' : 'Amount:'+d.amount)).style("left", (d3.event.pageX) + "px").style("top", (d3.event.pageY - 27) + "px");
+		})
+		.on("mouseout", function(d) {
+			div.transition()
+			.duration(400)
+			.style("opacity", 0);
+		})
+		;
 	}
 );
