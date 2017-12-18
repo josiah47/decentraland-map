@@ -22,13 +22,14 @@
 </head>
 
 <body>
-<button onclick="document.getElementById('modal01').style.display='block'" class="w3-button">0xee9268a3bc0Db1Ca59427125fDb75916884bd89e</button>
+	<button onclick="document.getElementById('modal01').style.display='block'" class="w3-button">0xee9268a3bc0Db1Ca59427125fDb75916884bd89e</button>
+	<button id="generate">Save as SVG</button>
+	<div id="divbody">
+	</div>
+	<div id="modal01" class="w3-modal w3-animate-zoom" onclick="this.style.display='none'">
+	  <img class="w3-modal-content" src="qr-0xee9268a3bc0db.svg">
+	</div>
 
-<div id="divbody">
-</div>
-<div id="modal01" class="w3-modal w3-animate-zoom" onclick="this.style.display='none'">
-  <img class="w3-modal-content" src="qr-0xee9268a3bc0db.svg">
-</div>
 <script type="text/javascript" src="index.js"></script>
 </body>
 

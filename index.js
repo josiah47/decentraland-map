@@ -54,3 +54,25 @@ axios.get('https://api.auction.decentraland.org/api/parcelState/range/'+mapoffse
 		;
 	}
 );
+
+d3.select("#generate")
+   .on("click", writeDownloadLink);
+
+function writeDownloadLink(){
+	var html = d3.select("svg")
+		.attr("title", "decentraland-map")
+		.attr("version", 1.1)
+		.attr("xmlns", "http://www.w3.org/2000/svg")
+		.node().parentNode.innerHTML;
+
+	var blob = new Blob([html], {type: "image/svg+xml"});
+   var url = window.URL.createObjectURL(blob);
+
+	var a = document.createElement("a");
+	document.body.appendChild(a);
+	a.style = "display: none";
+	a.href = url;
+	a.download = "decentraland-map.svg";
+	a.click();
+	window.URL.revokeObjectURL(url);
+}
