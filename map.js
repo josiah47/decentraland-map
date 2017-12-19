@@ -25,12 +25,11 @@ function render_svg_map(input, mapoffset) {
 	svg.append("rect")
 			.attr("width", "100%")
 			.attr("height", "100%")
-			.attr("fill", "white")
+			.attr("fill", "white");
 	let svgContainer = svg.append("g").attr("transform", "translate(" + -(blocksize/2) + "," + -(blocksize/2) + ")");
 
-	let landdata = input.data;
 	svgContainer.selectAll("rect")
-		.data(landdata)
+		.data(input)
 		.enter()
 		.append("rect")
 		.attr("x", function(d){
@@ -57,11 +56,11 @@ module.exports = function( mapoffset, outputLocation, inputData ){
 		var mapoffsetrequest = '-'+mapoffset+',-'+mapoffset+'/'+mapoffset+','+mapoffset;
 		axios.get('https://api.auction.decentraland.org/api/parcelState/range/'+mapoffsetrequest)
 			.then((res) => {
-				fs.writeFileSync(outputLocation, render_svg_map(res, mapoffset));
+				fs.writeFileSync(outputLocation, render_svg_map(res.data.data, mapoffset));
 			}
 		);
 	}
-}
+};
 
 if (require.main === module) {
 	module.exports(argv.size, argv.filename);
