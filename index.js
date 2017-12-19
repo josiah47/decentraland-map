@@ -2,14 +2,15 @@ var size = 50;
 var blocksize = 15;
 var mapoffset = 150;
 var mapoffsetrequest = '-'+mapoffset+',-'+mapoffset+'/'+mapoffset+','+mapoffset;
-var width = (mapoffset*blocksize) * 2 + blocksize;
 var landdata;
+var width = (mapoffset*blocksize) * 2 + blocksize;
 var height = (mapoffset*blocksize) * 2 + blocksize;
 var color = d3.scaleOrdinal(d3.schemeCategory10);
 
 var svg = d3.select("#divbody").append("svg")
-	.attr("width", width)
-   .attr("height", height);
+	.attr('width', '100%')
+	.attr('height', '90%')
+	.attr('viewBox', '0 0 ' + width + ' ' + height);
 
 var zoomLayer = svg.append("g");
 var zoomed = function() {
