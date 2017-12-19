@@ -57,7 +57,7 @@ module.exports = function( mapoffset, outputLocation, inputData ){
 	} else {
 		axios.get('https://api.auction.decentraland.org/api/parcelState/range/'+mapoffsetrequest)
 			.then((res) => {
-				fs.writeFileSync(outputLocation, render_svg_map(res.data)));
+				fs.writeFileSync(outputLocation, render_svg_map(res.data));
 			}
 		);
 	}
