@@ -13,8 +13,8 @@ const { JSDOM } = jsdom;
 const hDOM = new JSDOM('<!DOCTYPE html><html><body></body></html>');
 
 function render_svg_map(input, mapoffset) {
-	var width = ((mapoffset*blocksize) * 2)+blocksize;
-	var height = ((mapoffset*blocksize) * 2)+blocksize;
+	var width = ((mapoffset*blocksize))+blocksize;
+	var height = ((mapoffset*blocksize))+blocksize;
 
 	let body = d3.select(hDOM.window.document).select('body');
 	let svg = body.append('div').attr('class', 'container')
