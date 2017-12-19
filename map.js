@@ -4,6 +4,8 @@ var axios = require('axios');
 var d3 = require('d3');
 var jsdom = require('jsdom');
 
+var parcelUtils = require('./parcelUtils');
+
 var blocksize = 15;
 var color = d3.scaleOrdinal(d3.schemeCategory10);
 
@@ -45,7 +47,7 @@ module.exports = function( mapoffset, outputLocation ){
 				})
 				.attr("height", blocksize-1)
 				.attr("width", blocksize-1)
-				.attr("fill", function(d) {return d.projectId !== null ? '#BFBFBF' : color(d.amount/100) ;})
+				.attr("fill", function(d) {return d.projectId !== null ? '#BFBFBF' : parcelUtils.getColorByAmount(d.amount, 50000) ;})
 				;
 
 			fs.writeFileSync(outputLocation, body.select('.container').html());
