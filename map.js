@@ -53,7 +53,7 @@ module.exports = function( mapoffset, outputLocation, inputData ){
 	svgContainer = svg.append("g").attr("transform", "translate(" + -(blocksize/2) + "," + -(blocksize/2) + ")");
 
 	if(inputData) {
-		fs.writeFileSync(outputLocation, render_svg_map(inputdata.data));
+		fs.writeFileSync(outputLocation, render_svg_map(inputData.data));
 	} else {
 		axios.get('https://api.auction.decentraland.org/api/parcelState/range/'+mapoffsetrequest)
 			.then((res) => {
