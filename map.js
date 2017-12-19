@@ -12,11 +12,7 @@ var color = d3.scaleOrdinal(d3.schemeCategory10);
 const { JSDOM } = jsdom;
 const hDOM = new JSDOM('<!DOCTYPE html><html><body></body></html>');
 
-module.exports = function( mapoffset, outputLocation ){
-	if(!mapoffset) mapoffset = 5;
-	if(!outputLocation) outputLocation = 'decentraland-map.svg';
-
-	var mapoffsetrequest = '-'+mapoffset+',-'+mapoffset+'/'+mapoffset+','+mapoffset;
+function render_svg_map(input, mapoffset) {
 	var width = ((mapoffset*blocksize) * 2)+blocksize;
 	var height = ((mapoffset*blocksize) * 2)+blocksize;
 
@@ -30,31 +26,43 @@ module.exports = function( mapoffset, outputLocation ){
 			.attr("width", "100%")
 			.attr("height", "100%")
 			.attr("fill", "white")
-	svgContainer = svg.append("g").attr("transform", "translate(" + -(blocksize/2) + "," + -(blocksize/2) + ")");
+	let svgContainer = svg.append("g").attr("transform", "translate(" + -(blocksize/2) + "," + -(blocksize/2) + ")");
 
-	axios.get('https://api.auction.decentraland.org/api/parcelState/range/'+mapoffsetrequest)
-		.then((res) => {
-			let landdata = res.data.data;
-			svgContainer.selectAll("rect")
-				.data(landdata)
-				.enter()
-				.append("rect")
-				.attr("x", function(d){
-					return (d.x*blocksize)+(width/2)+1;
-				})
-				.attr("y", function(d){
-					return ((d.y*-1)*blocksize)+(height/2)+1;
-				})
-				.attr("height", blocksize-1)
-				.attr("width", blocksize-1)
-				.attr("fill", function(d) {return d.projectId !== null ? '#BFBFBF' : parcelUtils.getColorByAmount(d.amount, 50000) ;})
-				;
+	let landdata = input.data;
+	svgContainer.selectAll("rect")
+		.data(landdata)
+		.enter()
+		.append("rect")
+		.attr("x", function(d){
+			return (d.x*blocksize)+(width/2)+1;
+		})
+		.attr("y", function(d){
+			return ((d.y*-1)*blocksize)+(height/2)+1;
+		})
+		.attr("height", blocksize-1)
+		.attr("width", blocksize-1)
+		.attr("fill", function(d) {return d.projectId !== null ? '#BFBFBF' : parcelUtils.getColorByAmount(d.amount, 50000) ;})
+		;
 
-			fs.writeFileSync(outputLocation, body.select('.container').html());
-		}
-	);
+	return body.select('.container').html();
+}
+
+module.exports = function( mapoffset, outputLocation, inputData ){
+	if(!mapoffset) mapoffset = 5;
+	if(!outputLocation) outputLocation = 'decentraland-map.svg';
+
+	if(inputData) {
+		fs.writeFileSync(outputLocation, render_svg_map(inputData, mapoffset));
+	} else {
+		var mapoffsetrequest = '-'+mapoffset+',-'+mapoffset+'/'+mapoffset+','+mapoffset;
+		axios.get('https://api.auction.decentraland.org/api/parcelState/range/'+mapoffsetrequest)
+			.then((res) => {
+				fs.writeFileSync(outputLocation, render_svg_map(res, mapoffset));
+			}
+		);
+	}
 }
 
 if (require.main === module) {
-    module.exports(argv.size, argv.filename);
+	module.exports(argv.size, argv.filename);
 }
