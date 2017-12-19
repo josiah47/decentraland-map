@@ -3,6 +3,7 @@ var blocksize = 15;
 var mapoffset = 150;
 var mapoffsetrequest = '-'+mapoffset+',-'+mapoffset+'/'+mapoffset+','+mapoffset;
 var width = (mapoffset*blocksize) * 2 + blocksize;
+var landdata;
 var height = (mapoffset*blocksize) * 2 + blocksize;
 var color = d3.scaleOrdinal(d3.schemeCategory10);
 
@@ -24,13 +25,26 @@ var div = d3.select("body").append("div")
 	.style("opacity", 0);
 
 function highlightAddress (id, highlightclass) {
-		let addresses = svg.selectAll('#id-'+id);
-		addresses.attr("class", ""+ highlightclass);
+	let addresses = svg.selectAll('#id-'+id);
+	addresses.attr("class", ""+ highlightclass);
+}
+
+function calculateTotalsForAddress(address) {
+	totals = d3.nest()
+		.key(function(d) { return d.address === address; })
+		.rollup(function(v) {
+			return {
+				numland: v.length,
+				totalbids: d3.sum(v, function(d) { return d.amount; }),
+				maxbid: d3.max(v, function(d) { return d.amount; })
+			};
+		}).object(landdata);
+	return totals['true'];
 }
 
 axios.get('https://api.auction.decentraland.org/api/parcelState/range/'+mapoffsetrequest)
 	.then((res) => {
-		let landdata = res.data.data;
+		landdata = res.data.data;
 
 		zoomLayer.selectAll("rect")
 			.data(landdata)
@@ -46,11 +60,20 @@ axios.get('https://api.auction.decentraland.org/api/parcelState/range/'+mapoffse
 			.attr("height", blocksize)
 			.attr("width", blocksize)
 			.attr("fill", function(d) {return d.projectId !== null ? '#BFBFBF' : color(d.amount/100) ;})
-			.on("click", function(d) { console.log(d);})
+			.on("click", function(d) { window.open('https://etherscan.io/address/'+d.address);console.log(d);})
 			.on("mouseover", function(d) {
-				div.transition().duration(100).style("opacity", 0.8);
-				div.html(d.id + "<br/>" + (d.projectId !== null ? 'Non biddable' : 'Amount:'+d.amount)).style("left", (d3.event.pageX) + "px").style("top", (d3.event.pageY - 27) + "px");
 				highlightAddress(d.address,'highlightAddress');
+				let totals = calculateTotalsForAddress(d.address);
+
+				div.transition().duration(100).style("opacity", 0.8);
+				div.html("Id:"+ d.id
+					+ "<br/>" + (d.projectId !== null ? 'Non biddable' : 'Bid:'+d.amount)
+					+ "<br/>Total Land:"+ totals.numland
+					+ "<br/>Total m&#xb2;:"+ totals.numland*100
+					+ "<br/>Total Bid:"+ totals.totalbids
+					+ "<br/>Max Bid:"+ totals.maxbid
+				).style("left", (d3.event.pageX + 10) + "px").style("top", (d3.event.pageY ) + "px");
+
 			})
 			.on("mouseout", function(d) {
 				div.transition()
