@@ -4,33 +4,37 @@
 	<title>Decentraland Map</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.12.0/axios.js"></script>
+	<script type="text/javascript" src="https://unpkg.com/axios/dist/axios.min.js"></script>
+	<script type="text/javascript" src="https://cdn.rawgit.com/rikmms/progress-bar-4-axios/master/dist/index.js"></script>
 	<script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.20.1/moment.min.js"></script>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/three.js/89/three.min.js"></script>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/16.3.5/Tween.min.js"></script>
+	<script type="text/javascript" src="http://mrdoob.github.com/three.js/examples/js/controls/TrackballControls.js"></script>
 	<style>
 		div.tooltip {
+			display: flex;
 			position: absolute;
 			text-align: center;
-			width: 60px;
-			height: 28px;
 			padding: 2px;
 			background: lightsteelblue;
 			border: 0px;
 			border-radius: 8px;
 			pointer-events: none;
 		}
+
+		.highlightAddress {
+			opacity: 1;
+			fill: #FFFFDD;
+		}
 	</style>
 </head>
 
 <body>
-	<button onclick="document.getElementById('modal01').style.display='block'" class="w3-button">0xee9268a3bc0Db1Ca59427125fDb75916884bd89e</button>
-	<button id="generate">Save as SVG</button>
-	<div id="divbody">
-	</div>
-	<div id="modal01" class="w3-modal w3-animate-zoom" onclick="this.style.display='none'">
-	  <img class="w3-modal-content" src="qr-0xee9268a3bc0db.svg">
-	</div>
-
-<script type="text/javascript" src="index.js"></script>
+	<script type="text/javascript">
+		loadProgressBar()
+	 </script>
+	<script type="text/javascript" src="index.js"></script>
 </body>
 
 </html>
