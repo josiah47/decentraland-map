@@ -35,30 +35,27 @@
 		loadProgressBar()
 	 </script>
 	 <script id="vertexShader" type="x-shader/x-vertex">
-		precision highp float;
+		precision mediump float;
+		precision mediump int;
 
-		uniform mat4 modelViewMatrix;
-		uniform mat4 projectionMatrix;
-
+		uniform mat4 modelViewMatrix; // optional
+		uniform mat4 projectionMatrix; // optional
 		attribute vec3 position;
 		attribute vec3 offset;
 		attribute vec4 color;
-		attribute vec4 orientation;
+		varying vec3 vPosition;
 		varying vec4 vColor;
-
-		void main() {
-			vec3 vPosition = position;
-			vec3 vcV = cross( orientation.xyz, vPosition );
-			vPosition = vcV * ( 2.0 * orientation.w ) + ( cross( orientation.xyz, vcV ) * 2.0 + vPosition );
+		void main()	{
+			vPosition = position;
 			vColor = color;
-			gl_Position = projectionMatrix * modelViewMatrix * vec4( offset + vPosition, 1.0 );
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( offset + position, 1.0 );
 		}
 	</script>
 
 	<script id="fragmentShader" type="x-shader/x-fragment">
-		precision highp float;
+		precision mediump float;
 		varying vec4 vColor;
-		void main() {
+		void main()	{
 			gl_FragColor = vec4( vColor );
 		}
 	</script>

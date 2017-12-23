@@ -160,8 +160,8 @@ function showLandData(data) {
 			var color = new THREE.Color( colorhex );
 
 			// positions
-			x = (land.x * (blocksize+1));
-			y = (land.y * (blocksize+1));
+			x = (land.x * (blocksize+1))+(blocksize/2);
+			y = (land.y * (blocksize+1))+(blocksize/2);
 			z = zStart;
 			vector.set( x, y, z, 0 );
 
