@@ -1,6 +1,6 @@
 var blocksize = 14;
 var mapoffset = 150;
-var renderingtimeframe = 'hour'; // hour || minute
+var renderingtimeframe = 'minute'; // hour || minute
 var landdata;
 var width = (mapoffset*blocksize) * 2 + blocksize;
 var height = (mapoffset*blocksize) * 2 + blocksize;
@@ -15,9 +15,22 @@ window.addEventListener( 'resize', onWindowResize, false );
 
 var container = document.createElement( 'div' );
 document.body.appendChild( container );
+var headerbar = document.createElement("div");
 var hourtext = document.createElement("div");
+hourtext.setAttribute('style','float: right;');
 hourtext.innerHTML = 'Hello';
-container.appendChild( hourtext );
+
+var btn = document.createElement("BUTTON");        // Create a <button> element
+var t = document.createTextNode("Manual Control");       // Create a text node
+btn.appendChild(t);                                // Append the text to <button>
+btn.onclick = function() { cancelTween(); };
+
+var headerbuttons = document.createElement("div");
+headerbuttons.setAttribute('style','float: left;');
+headerbuttons.appendChild(btn);
+headerbar.appendChild(headerbuttons);
+headerbar.appendChild( hourtext );
+container.appendChild( headerbar );
 
 container.appendChild( renderer.domElement );
 
@@ -46,6 +59,16 @@ scene.add( new THREE.AmbientLight( 0x989898 ) );
 
 renderer.setClearColor( 0xE4EEF1, 1);
 
+var tween;
+function cancelTween() {
+	if (controls.enable === true) {
+		tween.start();
+	} else {
+		console.log('cancel');
+		tween.stop();
+		controls.enable = true;
+	}
+}
 function onWindowResize() {
 	camera.aspect = window.innerWidth / window.innerHeight;
 	camera.updateProjectionMatrix();
@@ -62,24 +85,6 @@ function animate() {
 }
 function render() {
 	renderer.render( scene, camera );
-}
-
-function createGeometryLand(amount) {
-	var squareShape = new THREE.Shape();
-
-	let shapesize = blocksize+2;
-	squareShape.moveTo( 0, 0 );
-	squareShape.lineTo( 0, shapesize );
-	squareShape.lineTo( shapesize, shapesize );
-	squareShape.lineTo( shapesize, 0 );
-	squareShape.lineTo( 0, 0 );
-
-	var extrudeSettings = {
-		amount: amount,
-		bevelEnabled: false
-	};
-	var geometry = new THREE.ExtrudeGeometry( squareShape, extrudeSettings );
-	return geometry;
 }
 
 function createGeometryBid(amount) {
@@ -109,6 +114,90 @@ function createGeometryBid(amount) {
 var landdatamap = new Map();
 
 function showLandData(data) {
+	var landboxbuffer = new THREE.BoxBufferGeometry( blocksize+2, blocksize+2, 0.5 );
+	var reslandboxbuffer = new THREE.BoxBufferGeometry( blocksize+2, blocksize+2, 0.1 );
+
+	var landboxinstance = new THREE.InstancedBufferGeometry();
+	landboxinstance.index = landboxbuffer.index;
+	landboxinstance.attributes.position = landboxbuffer.attributes.position;
+	landboxinstance.attributes.uv = landboxbuffer.attributes.uv;
+
+	var reslandboxinstance = new THREE.InstancedBufferGeometry();
+	reslandboxinstance.index = reslandboxbuffer.index;
+	reslandboxinstance.attributes.position = reslandboxbuffer.attributes.position;
+	reslandboxinstance.attributes.uv = reslandboxbuffer.attributes.uv;
+
+	// per instance data
+	var landoffsets = [];
+	var reslandoffsets = [];
+	var reslandcolors = [];
+	var landcolors = [];
+
+	var vector = new THREE.Vector3();
+	let dataarray = Object.keys(data);
+	dataarray.forEach( function (landid) {
+		let land = data[landid];
+		land.bids.forEach(function (bid,index) {
+			let zStart = 0;
+			if (landdatamap.has(landid)) {
+				zStart = landdatamap.get(landid);
+			}
+
+			let zHeight = bid.amount/1000;
+			landdatamap.set(landid, zStart+zHeight);
+
+			// Move reserved land down below available land
+			if (zStart+zHeight < 0.5) {
+				zStart-=zHeight;
+			}
+
+			let colorhex;
+			if (!bid.amount || bid.amount === null || zHeight === 0.1) {
+				colorhex = '#676767';
+			} else if (zHeight === 0.5) {
+				colorhex = '#6D4E00';
+			}
+			var color = new THREE.Color( colorhex );
+
+			// positions
+			x = (land.x * (blocksize+1));
+			y = (land.y * (blocksize+1));
+			z = zStart;
+			vector.set( x, y, z, 0 );
+
+			if (zHeight === 0.1) {
+				reslandoffsets.push( vector.x, vector.y,  vector.z );
+				reslandcolors.push( color.r, color.g, color.b, 1.0 );
+			} else {
+				landoffsets.push(  vector.x, vector.y, vector.z );
+				landcolors.push( color.r, color.g, color.b, 1.0 );
+			}
+		});
+	});
+
+	landboxinstance.addAttribute( 'offset', new THREE.InstancedBufferAttribute( new Float32Array( landoffsets ), 3 ) );
+	landboxinstance.addAttribute( 'color', new THREE.InstancedBufferAttribute( new Float32Array( landcolors ), 4 ) );
+
+	reslandboxinstance.addAttribute( 'offset', new THREE.InstancedBufferAttribute( new Float32Array( reslandoffsets ), 3 ) );
+	reslandboxinstance.addAttribute( 'color', new THREE.InstancedBufferAttribute( new Float32Array( reslandcolors ), 4 ) );
+
+	var material = new THREE.RawShaderMaterial( {
+		uniforms: {
+			time: { value: 1.0 }
+		},
+		vertexShader: document.getElementById( 'vertexShader' ).textContent,
+		fragmentShader: document.getElementById( 'fragmentShader' ).textContent
+	} );
+
+	var landmesh = new THREE.Mesh( landboxinstance, material );
+	var reslandmesh = new THREE.Mesh( reslandboxinstance, material );
+	scene.add( landmesh );
+	scene.add( reslandmesh );
+
+	render();
+}
+
+function showBidData(data) {
 	var bufferGeometry = new THREE.BufferGeometry();
 
 	// per instance data
@@ -118,7 +207,6 @@ function showLandData(data) {
 
 	var vector = new THREE.Vector3();
 	let dataarray = Object.keys(data);
-	// ~console.log(dataarray.length);
 	dataarray.forEach( function (landid) {
 		let land = data[landid];
 		// ~land.sort(function (a,b) { return a.amount-b.amount;});
@@ -142,16 +230,6 @@ function showLandData(data) {
 			z = zStart;
 			vector.set( x, y, z, 0 );
 
-			var geometry;
-			if (zStart+zHeight > 0.5) {
-				// ~return;
-				geometry = createGeometryBid(zHeight);
-			} else {
-				// ~return;
-				geometry = createGeometryLand(zHeight);
-			}
-			geometry.translate( vector.x, vector.y, vector.z );
-
 			let colorhex;
 			if (!bid.amount || bid.amount === null || zHeight === 0.1) {
 				colorhex = '#676767';
@@ -170,6 +248,10 @@ function showLandData(data) {
 			}
 
 			var color = new THREE.Color( colorhex );
+
+			var geometry = createGeometryBid(zHeight);
+			geometry.translate( vector.x, vector.y, vector.z );
+
 			geometry.faces.forEach( function ( face, index ) {
 				positions.push( geometry.vertices[ face.a ].x );
 				positions.push( geometry.vertices[ face.a ].y );
@@ -205,7 +287,6 @@ function showLandData(data) {
 	bufferGeometry.addAttribute( 'position', new THREE.Float32BufferAttribute( positions, 3 ) );
 	bufferGeometry.addAttribute( 'normal', new THREE.Float32BufferAttribute( normals, 3 ) );
 	bufferGeometry.addAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
-	bufferGeometry.computeBoundingSphere();
 
 	var material = new THREE.MeshPhongMaterial( {
 		specular: 0xBFBFBF, shininess: 5,
@@ -220,14 +301,22 @@ function showLandData(data) {
 
 render();
 
+console.time('loadmapclean');
 axios.get('./mapclean.json')
 	.then((res) => {
+		console.timeEnd('loadmapclean');
+
+		console.time('showmapdata');
 		showLandData(res.data);
+		console.timeEnd('showmapdata');
 
 		animate();
 
+		console.time('loadlandbids');
 		axios.get('./landbids.json')
 			.then((res) => {
+				console.timeEnd('loadlandbids');
+
 				let hourminuteprefix = ':00:00';
 				let dateformat = "YYYY-MM-DD HH";
 				if (renderingtimeframe === 'minute') {
@@ -235,17 +324,22 @@ axios.get('./mapclean.json')
 					dateformat = "YYYY-MM-DD HH:mm";
 				}
 
+				console.time('sort');
 				let keys = Object.keys(res.data);
 				keys.sort(function (a,b) {
 					return moment(a+ hourminuteprefix).isAfter(moment(b+ hourminuteprefix));
 				});
+				console.timeEnd('sort');
 				let nextdate = moment(keys[0]+ hourminuteprefix); // Get first date in sort keys
-				// ~let nextdate = moment('2017-12-22 04:00:00');
+				// ~let nextdate = moment('2017-12-23 04:00:00');
 				let minutetimediff = moment(keys[keys.length-1]+ hourminuteprefix).diff(moment(nextdate), renderingtimeframe);
 
+				if (controls.enable === true) {
+					minutetimediff = 1000;
+				}
 				var cameraTarget = new THREE.Vector3(250, -3500, 1000);
-				var tween = new TWEEN.Tween(cameraPos)
-					.to(cameraTarget, minutetimediff * 100)
+				tween = new TWEEN.Tween(cameraPos)
+					.to(cameraTarget, minutetimediff * 10)
 					.easing(TWEEN.Easing.Sinusoidal.InOut)
 				.onUpdate(function () {
 					camera.position.set(this.x, this.y, this.z);
@@ -256,11 +350,11 @@ axios.get('./mapclean.json')
 				});
 				tween.start();
 
-				var timedelay = 100;
+				var timedelay = 10;
 				var timerLand = setInterval(function() {
 					let datedata = res.data[nextdate.format(dateformat)];
 					if (datedata) {
-						showLandData(datedata);
+						showBidData(datedata);
 					}
 
 					if (nextdate.isSameOrAfter(moment())) {
@@ -270,7 +364,7 @@ axios.get('./mapclean.json')
 					}
 
 					hourtext.innerHTML = nextdate.format("dddd, MMMM Do YYYY HH:mm");
-					nextdate.add(1, renderingtimeframe);
+					nextdate.add(10, renderingtimeframe);
 				}, timedelay);
 		});
 });
