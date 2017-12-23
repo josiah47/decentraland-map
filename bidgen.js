@@ -2,7 +2,8 @@ var argv = require('yargs').argv;
 var fs = require('fs');
 var axios = require('axios');
 var moment = require('moment');
-
+var dateformat = "YYYY-MM-DD HH:mm";
+var roundtotens = true;
 var bidsonLand = new Map();
 function process_bidgroup_into_landbids(input) {
 	var landBidsDates = {};
@@ -20,11 +21,17 @@ function process_bidgroup_into_landbids(input) {
 
 			let day = moment(bidgroup.receivedAt);
 			if (day) {
-				let bidDate = landBidsDates[ day.format("YYYY-MM-DD HH:mm") ];
+				let biddate = day.format(dateformat);
+				let tensminutemark = biddate;
+				if (roundtotens) {
+					tensminutemark = biddate.slice(0, -1) +'0'; //round to nearest tens
+				}
+				// ~console.log(tensminutemark);
+				let bidDate = landBidsDates[ tensminutemark ];
 
 				if (!bidDate) {
 					bidDate = {};
-					landBidsDates[ day.format("YYYY-MM-DD HH:mm") ] = bidDate;
+					landBidsDates[ tensminutemark ] = bidDate;
 				}
 
 				if (!bidDate[landid]) {
