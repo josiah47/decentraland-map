@@ -1,6 +1,6 @@
 var blocksize = 14;
 var mapoffset = 150;
-var dateformat = "YYYY-MM-DD HH";
+var renderingtimeframe = 'hour'; // hour || minute
 var landdata;
 var width = (mapoffset*blocksize) * 2 + blocksize;
 var height = (mapoffset*blocksize) * 2 + blocksize;
@@ -228,21 +228,24 @@ axios.get('./mapclean.json')
 
 		axios.get('./landbids.json')
 			.then((res) => {
+				let hourminuteprefix = ':00:00';
+				let dateformat = "YYYY-MM-DD HH";
+				if (renderingtimeframe === 'minute') {
+					hourminuteprefix = ':00';
+					dateformat = "YYYY-MM-DD HH:mm";
+				}
+
 				let keys = Object.keys(res.data);
 				keys.sort(function (a,b) {
-					return moment(a+':00').isAfter(moment(b+':00'));
+					return moment(a+ hourminuteprefix).isAfter(moment(b+ hourminuteprefix));
 				});
-				let nextdate = moment(keys[0]+':00'); // Get first date in sort keys
-				// ~let nextdate = moment('2017-12-22 04:00:00'); // Get first date in sort keys
-				let minutetimediff = moment(keys[keys.length-1]+':00').diff(moment(nextdate), 'minutes');
-
-				let tweenstarted = false;
-
-				let timediff = minutetimediff;
+				let nextdate = moment(keys[0]+ hourminuteprefix); // Get first date in sort keys
+				// ~let nextdate = moment('2017-12-22 04:00:00');
+				let minutetimediff = moment(keys[keys.length-1]+ hourminuteprefix).diff(moment(nextdate), renderingtimeframe);
 
 				var cameraTarget = new THREE.Vector3(250, -3500, 1000);
 				var tween = new TWEEN.Tween(cameraPos)
-					.to(cameraTarget, timediff*100)
+					.to(cameraTarget, minutetimediff * 100)
 					.easing(TWEEN.Easing.Sinusoidal.InOut)
 				.onUpdate(function () {
 					camera.position.set(this.x, this.y, this.z);
@@ -251,16 +254,11 @@ axios.get('./mapclean.json')
 				.onComplete(function () {
 					camera.lookAt(new THREE.Vector3(0, 0, 0));
 				});
+				tween.start();
 
-				if (!tweenstarted) {
-					tween.start();
-					tweenstarted =true;
-				}
-
-				let currentminute = 0;
-				var timedelay = 1;
+				var timedelay = 100;
 				var timerLand = setInterval(function() {
-					let datedata = res.data[nextdate.format("YYYY-MM-DD HH:mm")];
+					let datedata = res.data[nextdate.format(dateformat)];
 					if (datedata) {
 						showLandData(datedata);
 					}
@@ -268,14 +266,11 @@ axios.get('./mapclean.json')
 					if (nextdate.isSameOrAfter(moment())) {
 						console.log('exit');
 						controls.enable = true; // Enable controls after rendering
-						stopped = true;
 						clearInterval(timerLand);
 					}
 
 					hourtext.innerHTML = nextdate.format("dddd, MMMM Do YYYY HH:mm");
-					nextdate.add(1, 'm');
-
-					currentminute = currentminute*timedelay;
+					nextdate.add(1, renderingtimeframe);
 				}, timedelay);
 		});
 });
